@@ -1,4 +1,5 @@
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <functional>
 #include <pico/mutex.h>
@@ -39,6 +40,27 @@ bool any_connected()
     for (auto& device : bt_devices_)
     {
         if (device.connected)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_wii_controller_connected(uint8_t idx)
+{
+    if (idx >= MAX_GAMEPADS) {
+        return false;
+    }
+    uni_hid_device_t* bp_device = uni_hid_device_get_instance_for_idx(idx);
+    return (bp_device != nullptr && bp_device->controller_type == CONTROLLER_TYPE_WiiController);
+}
+
+bool any_wii_controller_connected()
+{
+    for (uint8_t i = 0; i < MAX_GAMEPADS; ++i)
+    {
+        if (bt_devices_[i].connected && is_wii_controller_connected(i))
         {
             return true;
         }
@@ -132,9 +154,14 @@ static void init_complete_cb(void) {
 }
 
 static uni_error_t device_discovered_cb(bd_addr_t addr, const char* name, uint16_t cod, uint8_t rssi) {
-    if (!((cod & UNI_BT_COD_MINOR_MASK) & UNI_BT_COD_MINOR_GAMEPAD)) {
+    uint8_t minor = cod & UNI_BT_COD_MINOR_MASK;
+
+    if (!(minor & (UNI_BT_COD_MINOR_GAMEPAD |
+                   UNI_BT_COD_MINOR_JOYSTICK |
+                   UNI_BT_COD_MINOR_REMOTE_CONTROL))) {
         return UNI_ERROR_IGNORE_DEVICE;
     }
+
     return UNI_ERROR_SUCCESS;
 }
 
@@ -190,6 +217,11 @@ static void oob_event_cb(uni_platform_oob_event_t event, void* data) {
 	return;
 }
 
+// Set to 1 to print all Bluepad32 controller inputs to UART (only when state changes)
+#ifndef BLUEPAD32_UART_LOG_INPUT
+#define BLUEPAD32_UART_LOG_INPUT 1
+#endif
+
 static void controller_data_cb(uni_hid_device_t* device, uni_controller_t* controller) {
     static uni_gamepad_t prev_uni_gp[MAX_GAMEPADS] = {};
 
@@ -199,6 +231,19 @@ static void controller_data_cb(uni_hid_device_t* device, uni_controller_t* contr
 
     uni_gamepad_t *uni_gp = &controller->gamepad;
     int idx = uni_hid_device_get_idx_for_instance(device);
+    
+#if BLUEPAD32_UART_LOG_INPUT
+    {
+        bool changed = std::memcmp(uni_gp, &prev_uni_gp[idx], sizeof(uni_gamepad_t)) != 0;
+        if (changed) {
+            printf("[BP32 idx=%d] dpad=0x%02x btns=0x%04x misc=0x%02x brake=%u throttle=%u "
+                   "Lx=%d Ly=%d Rx=%d Ry=%d\n",
+                   idx, (unsigned)uni_gp->dpad, (unsigned)uni_gp->buttons, (unsigned)uni_gp->misc_buttons,
+                   (unsigned)uni_gp->brake, (unsigned)uni_gp->throttle,
+                   (int)uni_gp->axis_x, (int)uni_gp->axis_y, (int)uni_gp->axis_rx, (int)uni_gp->axis_ry);
+        }
+    }
+#endif
 
     Gamepad* gamepad = bt_devices_[idx].gamepad;
     Gamepad::PadIn gp_in;
@@ -233,25 +278,82 @@ static void controller_data_cb(uni_hid_device_t* device, uni_controller_t* contr
             break;
     }
 
-    if (uni_gp->buttons & BUTTON_A) gp_in.buttons |= gamepad->MAP_BUTTON_A;
-    if (uni_gp->buttons & BUTTON_B) gp_in.buttons |= gamepad->MAP_BUTTON_B;
-    if (uni_gp->buttons & BUTTON_X) gp_in.buttons |= gamepad->MAP_BUTTON_X;
-    if (uni_gp->buttons & BUTTON_Y) gp_in.buttons |= gamepad->MAP_BUTTON_Y;
-    if (uni_gp->buttons & BUTTON_SHOULDER_L) gp_in.buttons |= gamepad->MAP_BUTTON_LB;
-    if (uni_gp->buttons & BUTTON_SHOULDER_R) gp_in.buttons |= gamepad->MAP_BUTTON_RB;
-    if (uni_gp->buttons & BUTTON_THUMB_L)    gp_in.buttons |= gamepad->MAP_BUTTON_L3;  
-    if (uni_gp->buttons & BUTTON_THUMB_R)    gp_in.buttons |= gamepad->MAP_BUTTON_R3;
-    if (uni_gp->misc_buttons & MISC_BUTTON_BACK)    gp_in.buttons |= gamepad->MAP_BUTTON_BACK;
-    if (uni_gp->misc_buttons & MISC_BUTTON_START)   gp_in.buttons |= gamepad->MAP_BUTTON_START;
-    if (uni_gp->misc_buttons & MISC_BUTTON_SYSTEM)  gp_in.buttons |= gamepad->MAP_BUTTON_SYS;
+    if (is_wii_controller_connected(idx)) {
+        if (uni_gp->buttons & BUTTON_A) gp_in.buttons |= gamepad->MAP_BUTTON_A;
+        if (uni_gp->buttons & BUTTON_B) gp_in.buttons |= gamepad->MAP_BUTTON_B;
+        if (uni_gp->buttons & BUTTON_X) gp_in.buttons |= gamepad->MAP_BUTTON_X;
+        if (uni_gp->buttons & BUTTON_Y) gp_in.buttons |= gamepad->MAP_BUTTON_Y;
+        if (uni_gp->buttons & BUTTON_SHOULDER_L) gp_in.buttons |= gamepad->MAP_BUTTON_LB;
+        if (uni_gp->buttons & BUTTON_SHOULDER_R) gp_in.buttons |= gamepad->MAP_BUTTON_RB;
+        //if (uni_gp->buttons & BUTTON_THUMB_L)    gp_in.buttons |= gamepad->MAP_BUTTON_L3;  
+        //if (uni_gp->buttons & BUTTON_THUMB_R)    gp_in.buttons |= gamepad->MAP_BUTTON_R3;
+        if (uni_gp->misc_buttons & MISC_BUTTON_BACK)    gp_in.buttons |= gamepad->MAP_BUTTON_BACK;
+        if (uni_gp->misc_buttons & MISC_BUTTON_START)   gp_in.buttons |= gamepad->MAP_BUTTON_START;
+        if (uni_gp->misc_buttons & MISC_BUTTON_SYSTEM)  gp_in.buttons |= gamepad->MAP_BUTTON_SYS;
+    }
+    else {
+        if (uni_gp->buttons & BUTTON_A) gp_in.buttons |= gamepad->MAP_BUTTON_A;
+        if (uni_gp->buttons & BUTTON_B) gp_in.buttons |= gamepad->MAP_BUTTON_B;
+        if (uni_gp->buttons & BUTTON_X) gp_in.buttons |= gamepad->MAP_BUTTON_X;
+        if (uni_gp->buttons & BUTTON_Y) gp_in.buttons |= gamepad->MAP_BUTTON_Y;
+        if (uni_gp->buttons & BUTTON_SHOULDER_L) gp_in.buttons |= gamepad->MAP_BUTTON_LB;
+        if (uni_gp->buttons & BUTTON_SHOULDER_R) gp_in.buttons |= gamepad->MAP_BUTTON_RB;
+        if (uni_gp->buttons & BUTTON_THUMB_L)    gp_in.buttons |= gamepad->MAP_BUTTON_L3;  
+        if (uni_gp->buttons & BUTTON_THUMB_R)    gp_in.buttons |= gamepad->MAP_BUTTON_R3;
+        if (uni_gp->misc_buttons & MISC_BUTTON_BACK)    gp_in.buttons |= gamepad->MAP_BUTTON_BACK;
+        if (uni_gp->misc_buttons & MISC_BUTTON_START)   gp_in.buttons |= gamepad->MAP_BUTTON_START;
+        if (uni_gp->misc_buttons & MISC_BUTTON_SYSTEM)  gp_in.buttons |= gamepad->MAP_BUTTON_SYS; 
+    }
 
-    gp_in.trigger_l = gamepad->scale_trigger_l<10>(static_cast<uint16_t>(uni_gp->brake));
-    gp_in.trigger_r = gamepad->scale_trigger_r<10>(static_cast<uint16_t>(uni_gp->throttle));
+    // Check for disconnect combo: Start+Select for most controllers, L3+R3 for OUYA (no Start/Select)
+    static uint32_t disconnect_combo_hold_time[MAX_GAMEPADS] = {0};
+    bool is_ouya = (device->controller_type == CONTROLLER_TYPE_OUYAController);
+    bool combo_pressed = is_ouya
+        ? ((uni_gp->buttons & BUTTON_THUMB_L) && (uni_gp->buttons & BUTTON_THUMB_R))
+        : ((uni_gp->misc_buttons & MISC_BUTTON_START) && (uni_gp->misc_buttons & MISC_BUTTON_BACK));
+    
+    if (combo_pressed) {
+        disconnect_combo_hold_time[idx]++;
+        // Require combo to be held for ~500ms (assuming ~60Hz callback rate, ~30 frames)
+        if (disconnect_combo_hold_time[idx] >= 30) {
+            printf("[BP32] Disconnect combo detected, disconnecting controller %d\n", idx);
+            uni_hid_device_disconnect(device);
+            disconnect_combo_hold_time[idx] = 0;
+            return; // Don't process further input after disconnect
+        }
+    } else {
+        disconnect_combo_hold_time[idx] = 0;
+    }
+
+    // Prefer analog triggers (brake / throttle) when present, but fall back to
+    // digital trigger buttons (e.g. Wii U LT / RT) when analog value is zero.
+    // For Wii controllers: Z button (shoulder) reports brake/throttle, but we only want it to map to LB/RB, not triggers
+    // So skip trigger mapping when shoulder buttons are pressed on Wii controllers
+    bool wii_shoulder_pressed = is_wii_controller_connected(idx) && 
+                                 ((uni_gp->buttons & BUTTON_SHOULDER_L) || (uni_gp->buttons & BUTTON_SHOULDER_R));
+    
+    if (!wii_shoulder_pressed) {
+        gp_in.trigger_l = gamepad->scale_trigger_l<10>(static_cast<uint16_t>(uni_gp->brake));
+        gp_in.trigger_r = gamepad->scale_trigger_r<10>(static_cast<uint16_t>(uni_gp->throttle));
+
+        if (gp_in.trigger_l == 0 && (uni_gp->buttons & BUTTON_TRIGGER_L)) {
+            gp_in.trigger_l = 0xFF;
+        }
+        if (gp_in.trigger_r == 0 && (uni_gp->buttons & BUTTON_TRIGGER_R)) {
+            gp_in.trigger_r = 0xFF;
+        }
+    }
     
     std::tie(gp_in.joystick_lx, gp_in.joystick_ly) = gamepad->scale_joystick_l<10>(uni_gp->axis_x, uni_gp->axis_y);
     std::tie(gp_in.joystick_rx, gp_in.joystick_ry) = gamepad->scale_joystick_r<10>(uni_gp->axis_rx, uni_gp->axis_ry);
 
     gamepad->set_pad_in(gp_in);
+
+#if BLUEPAD32_UART_LOG_INPUT
+    if (idx >= 0 && idx < static_cast<int>(MAX_GAMEPADS)) {
+        std::memcpy(&prev_uni_gp[idx], uni_gp, sizeof(uni_gamepad_t));
+    }
+#endif
 }
 
 const uni_property_t* get_property_cb(uni_property_idx_t idx) 
