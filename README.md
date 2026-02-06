@@ -1,4 +1,4 @@
-# OGX-Mini
+# OGX-Mini Fork
 ![OGX-Mini Boards](images/OGX-Mini-github.jpg "OGX-Mini Boards")
 
 Firmware for the RP2040, capable of emulating gamepads for several game consoles. The firmware comes in many flavors, supported on the [Adafruit Feather USB Host board](https://www.adafruit.com/product/5723), Pi Pico, Pi Pico 2, Pi Pico W, Pi Pico 2 W, Waveshare RP2040-Zero, Pico/ESP32 hybrid, and a 4-Channel RP2040-Zero setup.
@@ -37,6 +37,10 @@ Start = Plus (Switch) = Options (Dualsense/DS4)
 
 After a new mode is stored, the RP2040 will reset itself so you don't need to unplug it.
 
+## Disconnecting Controllers
+For most controllers pressing and holding Start+Select (+/-, etc) for the controller will disconnect it and restart pairing mode.
+For the OUYA controller there is no Start+Select, the disconnection combo has been set to L3+R3.
+
 ## Supported devices
 ### Wired controllers
 - Original Xbox Duke and S
@@ -67,9 +71,21 @@ Note: There are some third party controllers that can change their VID/PID, thes
 - Switch Pro
 - Steam
 - Stadia
-- And more
+- Wii U Pro
+- Wii Remote
+   - Supported Extensions:
+      - Gamepad
+      - Nunchuck
+      - GameCube Controller
+- 8BitDo Ultimate Wireless (Switch layout)
 
 Please visit [**this page**](https://bluepad32.readthedocs.io/en/latest/supported_gamepads/) for a more comprehensive list of supported controllers and Bluetooth pairing instructions.
+
+# Features new to this fork:
+Note: These features have been added to the Pico W/ Pico 2 W firmware support, I do not have the other boards to test and implement the same fixes at this time.
+- Wii U Pro controllers are supported fully with working LT and RT
+- Wii Remotes are supported along with the following controllers connected: Nunchuck/ GameCube/ Wii Gamepad.
+- Disconnection Combo has been added: Start+Select for most controllers, L3+R3 for OUYA controllers.
 
 ## Features new to v1.0.0
 - Bluetooth functionality for the Pico W, Pico 2 W, and Pico+ESP32.
@@ -85,7 +101,7 @@ Please visit [**this page**](https://bluepad32.readthedocs.io/en/latest/supporte
 - Analog button support on OG Xbox and PS3.
 - RGB LED support for RP2040-Zero and Adafruit Feather boards.
 
-## Planned additions
+## Planned additions from the original creator
 - More accurate report parser for unknown HID controllers
 - Hardware design for internal OG Xbox install
 - Hardware design for 4 channel RP2040-Zero adapter
@@ -97,6 +113,17 @@ Please visit [**this page**](https://bluepad32.readthedocs.io/en/latest/supporte
 - Button macros
 - Rumble settings (intensity, enabled/disable, etc.)
 
+## Planned additions for this fork 
+- Output to the following consoles:
+      - GameCube
+      - Wii U (GameCube controller adapter)
+      - PS2
+      - DreamCast
+      - NES
+      - SNES
+      - Genesis
+      - Master System
+
 ## Hardware
 For Pi Pico, RP2040-Zero, 4 channel, and ESP32 configurations, please see the hardware folder for diagrams.
 
@@ -104,7 +131,7 @@ I've designed a PCB for the RP2040-Zero so you can make a small form-factor adap
 
 <img src="images/OGX-Mini-rpzero-int.jpg" alt="OGX-Mini Boards" width="400">
 
-If you would like a prebuilt unit, you can purchase one, with cable and Xbox adapter included, from my [**Etsy store**](https://www.etsy.com/listing/1426992904/ogx-mini-controller-adapter-for-original).
+If you would like a prebuilt unit, you can purchase one, with cable and Xbox adapter included, from the original creators store: [**Etsy store**](https://www.etsy.com/listing/1426992904/ogx-mini-controller-adapter-for-original).
 
 ## Adding supported controllers
 If your third party controller isn't working, but the original version is listed above, send me the device's VID and PID and I'll add it so it's recognized properly.
@@ -140,4 +167,8 @@ Please see the Hardware directory for a diagram showing how to hookup the ESP32 
 
 You will need ESP-IDF v5.1, esptool, python3, and git installed. If you use VSCode, you can install the ESP-IDF extension and configure the project for ESP-IDF v5.1, it'll download everything for you and then you just click the build button at the bottom of the window.
 
-When you build with ESP-IDF, Cmake will run a python script that copies the necessary BTStack files into the components directory, this is needed since BTStack isn't configured as an ESP-IDF component when you download it with git. 
+When you build with ESP-IDF, Cmake will run a python script that copies the necessary BTStack files into the components directory, this is needed since BTStack isn't configured as an ESP-IDF 
+
+# Credit to the original creator [https://wiredopposite.github.io/](https://github.com/wiredopposite/OGX-Mini/tree/master) for the original base of the project!
+
+component when you download it with git. 
