@@ -381,7 +381,7 @@ uni_platform* get_driver()
 
 //Public API
 
-void run_task(Gamepad(&gamepads)[MAX_GAMEPADS])
+void init(Gamepad(&gamepads)[MAX_GAMEPADS])
 {
     for (uint8_t i = 0; i < MAX_GAMEPADS; ++i)
     {
@@ -396,7 +396,11 @@ void run_task(Gamepad(&gamepads)[MAX_GAMEPADS])
     led_timer_.context = nullptr;
     btstack_run_loop_set_timer(&led_timer_, LED_CHECK_TIME_MS);
     btstack_run_loop_add_timer(&led_timer_);
+}
 
+void run_task(Gamepad(&gamepads)[MAX_GAMEPADS])
+{
+    init(gamepads);
     btstack_run_loop_execute();
 }
 

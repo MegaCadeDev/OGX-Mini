@@ -172,7 +172,7 @@ namespace XInput
 
 	static const uint8_t STRING_LANGUAGE[]     = { 0x09, 0x04 };
 	static const uint8_t STRING_MANUFACTURER[] = "Microsoft";
-	static const uint8_t STRING_PRODUCT[]      = "XInput STANDARD GAMEPAD";
+	static const uint8_t STRING_PRODUCT[]      = "Xbox 360 Controller";
 	static const uint8_t STRING_VERSION[]      = "1.0";
 
 	static const uint8_t *DESC_STRING[] __attribute__((unused)) =
@@ -180,7 +180,7 @@ namespace XInput
 		STRING_LANGUAGE,
 		STRING_MANUFACTURER,
 		STRING_PRODUCT,
-		STRING_VERSION
+		STRING_VERSION,
 	};
 
 	static const uint8_t DESC_DEVICE[] =
@@ -188,68 +188,44 @@ namespace XInput
 		0x12,       // bLength
 		0x01,       // bDescriptorType (Device)
 		0x00, 0x02, // bcdUSB 2.00
-		0xFF,	      // bDeviceClass
-		0xFF,	      // bDeviceSubClass
-		0xFF,	      // bDeviceProtocol
-		0x40,	      // bMaxPacketSize0 64
-		0x5E, 0x04, // idVendor 0x045E
-		0x8E, 0x02, // idProduct 0x028E
-		0x14, 0x01, // bcdDevice 2.14
+		0xFF,       // bDeviceClass
+		0xFF,       // bDeviceSubClass
+		0xFF,       // bDeviceProtocol
+		0x40,       // bMaxPacketSize0 64
+		0x5E, 0x04, // idVendor 0x045E (Microsoft)
+		0x8E, 0x02, // idProduct 0x028E (Xbox 360 Controller)
+		0x14, 0x01, // bcdDevice 1.14
 		0x01,       // iManufacturer (String Index)
 		0x02,       // iProduct (String Index)
 		0x03,       // iSerialNumber (String Index)
 		0x01,       // bNumConfigurations 1
 	};
 
+	// Single-interface XInput config (48 bytes) for PC
+	static constexpr uint16_t CONFIG_TOTAL_LENGTH = 48;
+
 	static const uint8_t DESC_CONFIGURATION[] =
 	{
-		0x09,        // bLength
-		0x02,        // bDescriptorType (Configuration)
-		0x30, 0x00,  // wTotalLength 48
+		// Configuration descriptor (9 bytes)
+		0x09, 0x02,
+		0x30, 0x00,  // wTotalLength 48 (LE)
 		0x01,        // bNumInterfaces 1
 		0x01,        // bConfigurationValue
-		0x00,        // iConfiguration (String Index)
-		0x80,        // bmAttributes
+		0x00,        // iConfiguration
+		0x80,        // bmAttributes (bus powered)
 		0xFA,        // bMaxPower 500mA
 
-		0x09,        // bLength
-		0x04,        // bDescriptorType (Interface)
-		0x00,        // bInterfaceNumber 0
-		0x00,        // bAlternateSetting
-		0x02,        // bNumEndpoints 2
-		0xFF,        // bInterfaceClass
-		0x5D,        // bInterfaceSubClass
-		0x01,        // bInterfaceProtocol
-		0x00,        // iInterface (String Index)
-
-		0x10,        // bLength
-		0x21,        // bDescriptorType (HID)
-		// 0x10, 0x01,  // bcdHID 1.10
-		0x00, 0x01,  // bcdHID 1.00
-		0x01,        // bCountryCode
-		0x24,        // bNumDescriptors
-		0x81,        // bDescriptorType[0] (Unknown 0x81)
-		0x14, 0x03,  // wDescriptorLength[0] 788
-		0x00,        // bDescriptorType[1] (Unknown 0x00)
-		0x03, 0x13,  // wDescriptorLength[1] 4867
-		0x01,        // bDescriptorType[2] (Unknown 0x02)
-		0x00, 0x03,  // wDescriptorLength[2] 768
-		0x00,        // bDescriptorType[3] (Unknown 0x00)
-
-		0x07,        // bLength
-		0x05,        // bDescriptorType (Endpoint)
-		0x81,        // bEndpointAddress (IN/D2H)
-		0x03,        // bmAttributes (Interrupt)
-		0x20, 0x00,  // wMaxPacketSize 32
-		0x01,        // bInterval 1 (unit depends on device speed)
-
-		0x07,        // bLength
-		0x05,        // bDescriptorType (Endpoint)
-		0x01,        // bEndpointAddress (OUT/H2D)
-		0x03,        // bmAttributes (Interrupt)
-		0x20, 0x00,  // wMaxPacketSize 32
-		0x08,        // bInterval 8 (unit depends on device speed)
+		// Interface 0: Gamepad (0xFF/0x5D/0x01)
+		0x09, 0x04, 0x00, 0x00, 0x02, 0xFF, 0x5D, 0x01, 0x00,
+		// Vendor descriptor (type 0x21, 16 bytes)
+		0x10, 0x21, 0x00, 0x01, 0x01, 0x25, 0x81, 0x14,
+		0x00, 0x00, 0x00, 0x00, 0x13, 0x02, 0x08, 0x00,
+		// EP 0x81 IN - Interrupt, 32 bytes, 1ms
+		0x07, 0x05, 0x81, 0x03, 0x20, 0x00, 0x01,
+		// EP 0x01 OUT - Interrupt, 32 bytes, 8ms
+		0x07, 0x05, 0x01, 0x03, 0x20, 0x00, 0x08,
 	};
+	static_assert(sizeof(DESC_CONFIGURATION) == CONFIG_TOTAL_LENGTH, "XInput config descriptor size");
 };
 
 #endif // _XINPUT_DESCRIPTORS_H_

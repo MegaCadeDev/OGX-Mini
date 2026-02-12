@@ -224,6 +224,10 @@ public:
         mutex_exit(&chatpad_in_mutex_);
     }
 
+    // Wii U GC adapter: set by host when controller uses positive Y for physical up (e.g. Xbox One/360)
+    void set_stick_y_positive_is_up(bool v) { stick_y_positive_is_up_ = v; }
+    bool stick_y_positive_is_up() const { return stick_y_positive_is_up_; }
+
     inline void reset_pad_in() 
 	{ 
         mutex_enter_blocking(&pad_in_mutex_);
@@ -358,6 +362,8 @@ private:
     std::atomic<bool> analog_device_{false};
 
     bool profile_analog_enabled_{false};
+
+    bool stick_y_positive_is_up_{false};  // true for Xbox (positive Y = up), false for Wii U/Nintendo
 
     JoystickSettings joy_settings_l_;
     JoystickSettings joy_settings_r_;

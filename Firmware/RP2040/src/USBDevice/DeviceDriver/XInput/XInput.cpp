@@ -3,7 +3,7 @@
 #include "USBDevice/DeviceDriver/XInput/tud_xinput/tud_xinput.h"
 #include "USBDevice/DeviceDriver/XInput/XInput.h"
 
-void XInputDevice::initialize() 
+void XInputDevice::initialize()
 {
     class_driver_ = *tud_xinput::class_driver();
 }
@@ -94,8 +94,11 @@ uint16_t XInputDevice::get_report_cb(uint8_t itf, uint8_t report_id, hid_report_
 
 void XInputDevice::set_report_cb(uint8_t itf, uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize) {}
 
-bool XInputDevice::vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request) 
+bool XInputDevice::vendor_control_xfer_cb(uint8_t rhport, uint8_t stage, tusb_control_request_t const *request)
 {
+    (void)rhport;
+    (void)stage;
+    (void)request;
     return false;
 }
 

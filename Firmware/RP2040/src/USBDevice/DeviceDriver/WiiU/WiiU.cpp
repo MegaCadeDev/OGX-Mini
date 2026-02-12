@@ -30,6 +30,9 @@ void WiiUDevice::initialize()
 // GC stick deadzone: values near center map to 128 to avoid spurious LEFT/RIGHT/UP/DOWN
 static constexpr int16_t STICK_DEADZONE = 4096;  // ~12.5% of -32768..32767
 
+// Dolphin GameCube test reported max stick range: Left ±111, C-stick ~±110..112 (center 0).
+// Our bytes 0–255 map to that via host; Y uses 1..254 to avoid full-up→down misread.
+
 static uint8_t stick_to_gc(int16_t value)
 {
 	if (value > -STICK_DEADZONE && value < STICK_DEADZONE)
@@ -37,7 +40,18 @@ static uint8_t stick_to_gc(int16_t value)
 	return Scale::int16_to_uint8(value);
 }
 
-static void fill_port_block(uint8_t port[9], const Gamepad::PadIn& gp_in)
+// Y axis only: map to 1..254 so 0/255 are never sent (some hosts treat extremes as wrong direction).
+static uint8_t stick_y_to_gc(int16_t value)
+{
+	if (value > -STICK_DEADZONE && value < STICK_DEADZONE)
+		return WiiU::STICK_CENTER;
+	uint8_t u = Scale::int16_to_uint8(value);
+	if (u <= 1)   return 1u;
+	if (u >= 254) return 254u;
+	return u;
+}
+
+static void fill_port_block(uint8_t port[9], const Gamepad::PadIn& gp_in, bool stick_y_positive_is_up)
 {
 	// Byte 0 (type): Bit 4 = Wired. Dolphin: (type & 0x10) != 0 → connected.
 	port[0] = WiiU::PORT_WIRED;
@@ -63,12 +77,19 @@ static void fill_port_block(uint8_t port[9], const Gamepad::PadIn& gp_in)
 	if (gp_in.trigger_r >= 255)                b2 |= WiiU::GCButtons::R;
 	port[2] = b2;
 
-	// Bytes 3–4: main stick X, Y (0–255, 128 = center) — Y axis inverted
+	// Bytes 3–4: main stick X, Y (0–255, 128 = center).
+	// Y: set by host — Xbox uses positive=up (send value), Wii U/Nintendo use negative=up (send 255-value).
 	port[3] = stick_to_gc(gp_in.joystick_lx);
-	port[4] = stick_to_gc(-gp_in.joystick_ly);
-	// Bytes 5–6: C-stick (substick) X, Y — Y axis inverted
+	{
+		uint8_t ly = stick_y_to_gc(gp_in.joystick_ly);
+		port[4] = stick_y_positive_is_up ? ly : static_cast<uint8_t>(255 - ly);
+	}
+	// Bytes 5–6: C-stick (substick) X, Y
 	port[5] = stick_to_gc(gp_in.joystick_rx);
-	port[6] = stick_to_gc(-gp_in.joystick_ry);
+	{
+		uint8_t ry = stick_y_to_gc(gp_in.joystick_ry);
+		port[6] = stick_y_positive_is_up ? ry : static_cast<uint8_t>(255 - ry);
+	}
 	// Bytes 7–8: L/R trigger analog (0–255)
 	port[7] = gp_in.trigger_l;
 	port[8] = gp_in.trigger_r;
@@ -83,7 +104,7 @@ void WiiUDevice::process(const uint8_t idx, Gamepad& gamepad)
 	// Dolphin may stop re-checking after seeing initial zeros; filling every frame avoids that.
 	// Combo check (check_for_driver_change) also uses get_pad_in(); both see the same current state.
 	Gamepad::PadIn gp_in = gamepad.get_pad_in();
-	fill_port_block(in_report_.port_data[idx], gp_in);
+	fill_port_block(in_report_.port_data[idx], gp_in, gamepad.stick_y_positive_is_up());
 
 	if (tud_suspended())
 		tud_remote_wakeup();

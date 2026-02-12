@@ -21,23 +21,24 @@ void XboxOneHost::process_report(Gamepad& gamepad, uint8_t address, uint8_t inst
 
     Gamepad::PadIn gp_in;
 
-    if (in_report->buttons[1] & XboxOne::Buttons1::DPAD_UP)    gp_in.dpad |= gamepad.MAP_DPAD_UP;
-    if (in_report->buttons[1] & XboxOne::Buttons1::DPAD_DOWN)  gp_in.dpad |= gamepad.MAP_DPAD_DOWN;
-    if (in_report->buttons[1] & XboxOne::Buttons1::DPAD_LEFT)  gp_in.dpad |= gamepad.MAP_DPAD_LEFT;
-    if (in_report->buttons[1] & XboxOne::Buttons1::DPAD_RIGHT) gp_in.dpad |= gamepad.MAP_DPAD_RIGHT;
+    const uint16_t b = in_report->buttons;
+    if (b & XboxOne::GamepadButtons::DPAD_UP)    gp_in.dpad |= gamepad.MAP_DPAD_UP;
+    if (b & XboxOne::GamepadButtons::DPAD_DOWN)  gp_in.dpad |= gamepad.MAP_DPAD_DOWN;
+    if (b & XboxOne::GamepadButtons::DPAD_LEFT)  gp_in.dpad |= gamepad.MAP_DPAD_LEFT;
+    if (b & XboxOne::GamepadButtons::DPAD_RIGHT) gp_in.dpad |= gamepad.MAP_DPAD_RIGHT;
 
-    if (in_report->buttons[1] & XboxOne::Buttons1::L3)    gp_in.buttons |= gamepad.MAP_BUTTON_L3;
-    if (in_report->buttons[1] & XboxOne::Buttons1::R3)    gp_in.buttons |= gamepad.MAP_BUTTON_R3;
-    if (in_report->buttons[1] & XboxOne::Buttons1::LB)    gp_in.buttons |= gamepad.MAP_BUTTON_LB;
-    if (in_report->buttons[1] & XboxOne::Buttons1::RB)    gp_in.buttons |= gamepad.MAP_BUTTON_RB;
-    if (in_report->buttons[0] & XboxOne::Buttons0::BACK)  gp_in.buttons |= gamepad.MAP_BUTTON_BACK;
-    if (in_report->buttons[0] & XboxOne::Buttons0::START) gp_in.buttons |= gamepad.MAP_BUTTON_START;
-    if (in_report->buttons[0] & XboxOne::Buttons0::SYNC)  gp_in.buttons |= gamepad.MAP_BUTTON_MISC;
-    if (in_report->buttons[0] & XboxOne::Buttons0::GUIDE) gp_in.buttons |= gamepad.MAP_BUTTON_SYS;
-    if (in_report->buttons[0] & XboxOne::Buttons0::A)     gp_in.buttons |= gamepad.MAP_BUTTON_A;
-    if (in_report->buttons[0] & XboxOne::Buttons0::B)     gp_in.buttons |= gamepad.MAP_BUTTON_B;
-    if (in_report->buttons[0] & XboxOne::Buttons0::X)     gp_in.buttons |= gamepad.MAP_BUTTON_X;
-    if (in_report->buttons[0] & XboxOne::Buttons0::Y)     gp_in.buttons |= gamepad.MAP_BUTTON_Y;
+    if (b & XboxOne::GamepadButtons::LEFT_THUMB)  gp_in.buttons |= gamepad.MAP_BUTTON_L3;
+    if (b & XboxOne::GamepadButtons::RIGHT_THUMB) gp_in.buttons |= gamepad.MAP_BUTTON_R3;
+    if (b & XboxOne::GamepadButtons::LEFT_SHOULDER)  gp_in.buttons |= gamepad.MAP_BUTTON_LB;
+    if (b & XboxOne::GamepadButtons::RIGHT_SHOULDER) gp_in.buttons |= gamepad.MAP_BUTTON_RB;
+    if (b & XboxOne::GamepadButtons::VIEW)  gp_in.buttons |= gamepad.MAP_BUTTON_BACK;
+    if (b & XboxOne::GamepadButtons::MENU) gp_in.buttons |= gamepad.MAP_BUTTON_START;
+    if (b & XboxOne::GamepadButtons::SYNC)  gp_in.buttons |= gamepad.MAP_BUTTON_MISC;
+    if (in_report->guide_pressed) gp_in.buttons |= gamepad.MAP_BUTTON_SYS;
+    if (b & XboxOne::GamepadButtons::A)     gp_in.buttons |= gamepad.MAP_BUTTON_A;
+    if (b & XboxOne::GamepadButtons::B)     gp_in.buttons |= gamepad.MAP_BUTTON_B;
+    if (b & XboxOne::GamepadButtons::X)     gp_in.buttons |= gamepad.MAP_BUTTON_X;
+    if (b & XboxOne::GamepadButtons::Y)     gp_in.buttons |= gamepad.MAP_BUTTON_Y;
 
     gp_in.trigger_l = gamepad.scale_trigger_l(static_cast<uint8_t>(in_report->trigger_l >> 2));
     gp_in.trigger_r = gamepad.scale_trigger_r(static_cast<uint8_t>(in_report->trigger_r >> 2));

@@ -11,4 +11,5 @@
 
 namespace bluepad32 {
     void run_task(Gamepad(&gamepads)[MAX_GAMEPADS]);
+    void init(Gamepad(&gamepads)[MAX_GAMEPADS]);
 } 

@@ -9,7 +9,14 @@
 #include <hardware/resets.h>
 
 #include "Board/Config.h"
+#include "Board/ogxm_log.h"
 #include "USBHost/HardwareIDs.h"
+
+#if defined(CONFIG_OGXM_DEBUG)
+#define debug_printf OGXM_LOG
+#else
+#define debug_printf(...) ((void)0)
+#endif
 #include "USBHost/HostDriver/XInput/tuh_xinput/tuh_xinput.h"
 #include "USBHost/HostDriver/HostDriver.h"
 #include "USBHost/HostDriver/PS5/PS5.h"
@@ -138,6 +145,10 @@ public:
 		device_slot.address = address;
 		interface.gamepad_idx = gp_idx;
 		interface.gamepad = gamepads_[gp_idx];
+		// Wii U GC adapter: Xbox controllers report positive Y for up; Nintendo use negative
+		const bool xbox_stick_y = (driver_type == HostDriverType::XBOXONE || driver_type == HostDriverType::XBOX360
+			|| driver_type == HostDriverType::XBOX360W || driver_type == HostDriverType::XBOXOG);
+		interface.gamepad->set_stick_y_positive_is_up(xbox_stick_y);
 		interface.driver->initialize(*interface.gamepad, device_slot.address, instance, report_desc, desc_len);
 
 		return true;
