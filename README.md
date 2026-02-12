@@ -8,10 +8,11 @@ Firmware for the RP2040, capable of emulating gamepads for several game consoles
 ## Supported platforms
 - Original Xbox
 - Playstation 3
-- Nintendo Switch (docked)
+- Nintendo Switch 1 & 2 (docked)
 - XInput (use [**UsbdSecPatch**](https://github.com/InvoxiPlayGames/UsbdSecPatch) for Xbox 360, or select the patch in J-Runner while flashing your NAND)
 - Playstation Classic
 - DInput
+- Wii U (GameCube Adapter)
 
 ## Changing platforms
 By default the OGX-Mini will emulate an OG Xbox controller, you must hold a button combo for 3 seconds to change which platform you want to play on. Your chosen mode will persist after powering off the device. 
@@ -32,8 +33,11 @@ Start = Plus (Switch) = Options (Dualsense/DS4)
     - Start + Dpad Left
 - PlayStation Classic
     - Start + A (Cross for PlayStation and B for Switch gamepads)
+- Wii U (GameCube Adapter)
+      - Start + Left Bumper + D-Pad Down
 - Web Application Mode
     - Start + Left Bumper + Right Bumper
+
 
 After a new mode is stored, the RP2040 will reset itself so you don't need to unplug it.
 
@@ -83,6 +87,7 @@ Please visit [**this page**](https://bluepad32.readthedocs.io/en/latest/supporte
 
 # Features new to this fork:
 Note: These features have been added to the Pico W/ Pico 2 W firmware support, I do not have the other boards to test and implement the same fixes at this time.
+- Ability to emulate the GameCube controller adapter for Wii U. (Also tested on Switch 1/ 2)
 - Wii U & Switch Pro controllers are supported fully with working LT and RT
 - Wii Remotes are supported along with the following controllers connected: Nunchuck/ GameCube/ Wii Gamepad.
 - Disconnection Combo has been added: Start+Select for most controllers, L3+R3 for OUYA controllers.
@@ -116,7 +121,6 @@ Note: These features have been added to the Pico W/ Pico 2 W firmware support, I
 ## Planned additions for this fork 
 - Output to the following consoles:
       - GameCube
-      - Wii U (GameCube controller adapter)
       - PS2
       - DreamCast
       - NES
